@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DiffuPlex</title>
+<meta name="description" content="DiffuPlex: Accelerating Full-Duplex Spoken Dialog Models via Rolling Masked Diffusion">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBFCFE; --panel:#FFFFFF; --line:#E8EDF4; --line2:#D6E0EC;
+  --ink:#141A22; --body:#3D4A59; --dim:#6B7C90; --faint:#9CACBE;
+  --accent:#3E5FB5; --accent2:#7E9BDC; --accentSoft:#EFF3FB;
+  --warm:#C9704F; --user:#B8862E;
+  --sans:"Inter",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  --serif:"Newsreader",Georgia,serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--body);font-family:var(--sans);line-height:1.65;
+  -webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+.narrow{max-width:820px;margin:0 auto}
+header{padding:86px 0 8px;text-align:center}
+h1{font-family:var(--serif);font-size:clamp(30px,4.4vw,50px);font-weight:500;line-height:1.16;
+  letter-spacing:-.022em;color:var(--ink);max-width:19ch;margin:0 auto}
+h1 em{font-style:normal;color:var(--accent)}
+.venue{margin-top:18px;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.sc{font-variant-caps:small-caps;letter-spacing:.045em;font-weight:600}
+h2{font-size:12px;letter-spacing:.17em;text-transform:uppercase;color:var(--faint);
+  font-weight:600;text-align:center;margin:0 0 26px}
+section{padding:56px 0}
+#abstract{padding-top:52px}
+.abs{font-size:16.5px;line-height:1.78;color:var(--body);text-align:justify;hyphens:auto}
+figure{margin:0}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 24px 18px;
+  box-shadow:0 22px 48px -40px rgba(20,26,34,.5)}
+.fig img{width:100%;display:block}
+figcaption{margin-top:16px;font-size:13.5px;color:var(--dim);line-height:1.6;text-align:center}
+figcaption b{color:var(--body);font-weight:600}
+.picker{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-bottom:30px}
+.pk{border:1px solid var(--line2);background:var(--panel);color:var(--dim);font:inherit;font-size:13px;
+  padding:9px 16px;border-radius:999px;cursor:pointer;transition:.16s}
+.pk:hover{border-color:var(--accent2);color:var(--ink)}
+.pk.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.prompt{max-width:760px;margin:0 auto 34px;text-align:center;font-size:15px;color:var(--dim);line-height:1.72}
+.prompt q{quotes:none;color:var(--ink)}
+.prompt .cut{color:var(--user)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px}
+@media(max-width:940px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 18px 15px;
+  box-shadow:0 18px 40px -38px rgba(20,26,34,.55)}
+.card.ours{border-color:var(--line2)}
+.nm{font-size:14.5px;font-weight:600;color:var(--ink);letter-spacing:-.008em}
+.nm .sc{font-weight:700}
+
+canvas{width:100%;height:138px;display:block;margin:13px 0 4px}
+.tr{height:176px;overflow-y:auto;border-top:1px solid var(--line);padding-top:12px;margin-top:9px;
+  font-size:13.5px;line-height:1.7}
+.tr.sm{height:136px;font-size:12.5px}
+.utt{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px}
+.who{flex:none;font-size:9px;letter-spacing:.1em;font-weight:700;color:var(--faint);
+  border:1px solid var(--line);border-radius:5px;padding:2px 5px;margin-top:4px;min-width:36px;text-align:center}
+.utt.u .who{color:var(--user);border-color:#E7D5AE}
+.utt.a .who{color:var(--accent);border-color:#D2DDF2}
+.tx w{color:var(--faint);transition:color .09s}
+.tx w.p{color:var(--body)}
+.tx w.c{color:var(--accent);font-weight:600}
+.utt.u .tx w.c{color:var(--user)}
+.none{color:var(--faint);font-style:italic;font-size:12.5px}
+.pl{display:flex;align-items:center;gap:12px;margin-top:13px}
+.pb{width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);background:var(--bg);
+  color:var(--accent);cursor:pointer;display:grid;place-items:center;flex:none;transition:.16s}
+.pb:hover{border-color:var(--accent);background:var(--accentSoft)}
+.pb svg{width:13px;height:13px;fill:currentColor}
+.sk{position:relative;flex:1;height:24px;cursor:pointer}
+.sk i{position:absolute;left:0;right:0;top:50%;margin-top:-2px;height:4px;border-radius:99px;background:var(--line)}
+.sk u{position:absolute;left:0;top:50%;margin-top:-2px;height:4px;border-radius:99px;width:0;
+  background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.sk b{position:absolute;top:50%;margin-top:-6px;width:2px;height:12px;background:var(--user);border-radius:2px;opacity:.85}
+.tm{font-size:11.5px;color:var(--faint);min-width:40px;text-align:right}
+.howto{max-width:760px;margin:0 auto 34px;background:var(--panel);border:1px solid var(--line);
+  border-radius:14px;padding:20px 24px 18px}
+.howto h3{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);
+  font-weight:600;margin-bottom:16px}
+.hr{display:flex;align-items:center;gap:16px;margin-bottom:13px}
+.hr:last-of-type{margin-bottom:0}
+.hb{flex:none;width:186px;position:relative;padding-top:11px}
+.hb s{position:absolute;top:0;left:0;width:5px;height:5px;border-radius:50%;background:var(--accent);
+  text-decoration:none}
+.hb d{display:flex;height:15px;border-radius:4px;overflow:hidden}
+.hb d i{display:block;height:100%}
+.sp{background:var(--accent)}
+.dr{background:#C8D6EF}
+.ds{background:#E8B5A0}
+.ht{font-size:13px;color:var(--dim);line-height:1.62}
+.ht b{color:var(--body);font-weight:600}
+.hnote{margin-top:15px;padding-top:13px;border-top:1px solid var(--line);font-size:12.5px;color:var(--faint);
+  line-height:1.6}
+.hnote em{font-style:normal;color:var(--user);border-left:2px dashed var(--user);padding-left:6px;margin-right:2px}
+footer{padding:64px 0 90px;text-align:center;font-size:12.5px;color:var(--faint)}
+</style></head><body>
+
+<header><div class="wrap">
+  <h1>DiffuPlex: Accelerating Full-Duplex Spoken Dialog Models via Rolling Masked Diffusion</h1>
+  <div class="venue">Anonymous Submission</div>
+</div></header>
+
+<section id="abstract"><div class="wrap"><div class="narrow">
+  <h2>Abstract</h2>
+  <p class="abs">Recent full-duplex spoken dialog models enable simultaneous listening and speaking, but fine-grained models still advance their backbone autoregressively at every interaction frame. We introduce DiffuPlex, a rolling masked diffusion framework that reduces this sequential computation by predicting multiple future user and assistant frames in a single backbone wake. DiffuPlex consumes only a confident prefix of each predicted future while interaction continues at the original frame rate. As user speech arrives, it checks the corresponding user predictions and, when the interaction diverges, preserves already played assistant content while revising only the unplayed future. We consider two inference policies over the same predictor: DiffuPlex-<span class="sc">Listen</span> consumes multiple future frames when they predict assistant silence, whereas DiffuPlex-<span class="sc">Speak</span> can also consume predicted assistant speech. Across full-duplex interaction and spoken-language evaluations, DiffuPlex substantially reduces sequential backbone computation while largely preserving interaction behavior and general capability. DiffuPlex-<span class="sc">Listen</span> and DiffuPlex-<span class="sc">Speak</span> achieve 1.46&times; and 1.59&times; deployment-path wall-clock speedups and 1.61&times; and 1.80&times; Core LM speedups, with all measured backbone invocations completing within the 80ms interaction interval. Human evaluation shows that <span class="sc">Listen</span> preserves speech naturalness and conversational quality, while <span class="sc">Speak</span> retains conversational quality with some degradation in speech naturalness.</p>
+</div></div></section>
+
+<section><div class="wrap">
+  <figure class="fig">
+    <img src="assets/figure1.png" alt="DiffuPlex overview">
+    <figcaption>A conventional full-duplex model wakes its backbone at every 80&thinsp;ms frame. <b>DiffuPlex</b> drafts several future frames in a single wake, plays a confident prefix, and revises only the unplayed remainder when the user diverges from what was predicted.</figcaption>
+  </figure>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Samples</h2>
+  <div class="howto">
+    <h3>How to read the strips</h3>
+    <div class="hr">
+      <div class="hb"><s></s><d><i class="sp" style="width:8%"></i></d></div>
+      <div class="ht">A dot is <b>one backbone call</b>. The bar under it is what that call produced. Here it produced a single 80&thinsp;ms frame, which is the autoregressive case.</div>
+    </div>
+    <div class="hr">
+      <div class="hb"><s></s><d><i class="sp" style="width:100%"></i></d></div>
+      <div class="ht">A <b>longer bar means one call covered more frames</b>. Everything dark blue was spoken to the listener.</div>
+    </div>
+    <div class="hr">
+      <div class="hb"><s></s><d><i class="sp" style="width:25%"></i><i class="dr" style="width:17%"></i><i class="ds" style="width:58%"></i></d></div>
+      <div class="ht">Light blue is <b>drafted but not yet spoken</b>. Nothing tells the model which of those frames it will get to use. If the user diverges from the prediction, the unspoken remainder <b>turns coral at that moment</b> and a new call begins.</div>
+    </div>
+    <div class="hnote"><em></em>Amber marks the user. The dashed band is the moment they cut in. Coral is only ever discarded output. Above each row, the close-set grey ticks are where a conventional model would have to call its backbone, once for every frame.</div>
+  </div>
+  <div class="picker" id="pick"></div>
+  <div class="prompt" id="prompt"></div>
+  <div class="g2" id="ours"></div>
+  <div class="g3" id="b1"></div>
+</div></section>
+
+<footer>Full-Duplex-Bench v1.0 &middot; user interruption</footer>
+
+<script>
+const PLAY='<svg viewBox="0 0 12 14"><path d="M0 0l12 7-12 7z"/></svg>';
+const PAUSE='<svg viewBox="0 0 12 14"><rect width="4" height="14"/><rect x="8" width="4" height="14"/></svg>';
+const FR=0.08, WIN=3.9, NOWX=0.42, NR=6, RH=17;
+const OURS=['listen','speak'], B1=['rl','pp','moshi'];
+const NAME={
+  listen:'DiffuPlex-<span class="sc">Listen</span>',
+  speak:'DiffuPlex-<span class="sc">Speak</span>',
+  rl:'personaplex-rl-seamless',
+  pp:'PersonaPlex',
+  moshi:'Moshi'
+};
+const $=s=>document.querySelector(s);
+const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt=t=>isNaN(t)?'0:00':`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+let DATA=[], cards=[], playing=null;
+
+function utts(u,a){
+  const all=u.map(w=>({...w,k:'u'})).concat(a.map(w=>({...w,k:'a'}))).sort((x,y)=>x.s-y.s);
+  const out=[]; let c=null;
+  for(const w of all){
+    if(!c||c.k!==w.k||w.s-c.w[c.w.length-1].e>1.6){ c={k:w.k,w:[w]}; out.push(c); }
+    else c.w.push(w);
+  }
+  return out;
+}
+function trHTML(u,a){
+  const g=utts(u,a);
+  if(!g.length) return '<div class="none">This system said nothing.</div>';
+  return g.map(x=>`<div class="utt ${x.k}"><span class="who">${x.k=='u'?'USER':'ASST'}</span><span class="tx">`+
+    x.w.map(w=>`<w data-s="${w.s}" data-e="${w.e}">${w.w}</w>`).join(' ')+'</span></div>').join('');
+}
+function rows(W){
+  const end=new Array(NR).fill(-1e9), r=[];
+  for(const [s,n] of W){
+    let k=end.findIndex(x=>s>=x-1e-9); if(k<0) k=end.indexOf(Math.min(...end));
+    r.push(k); end[k]=s+n*FR;
+  }
+  return r;
+}
+function draw(o,t){
+  const c=o.cv, dpr=devicePixelRatio||1, W=c.clientWidth, H=c.clientHeight;
+  if(c.width!==W*dpr){ c.width=W*dpr; c.height=H*dpr; }
+  const g=c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.clearRect(0,0,W,H);
+  const K=o.wk; if(!K||!K.length) return;
+  if(!o.rw) o.rw=rows(K);
+  const t0=t-WIN*NOWX, pps=W/WIN, X=s=>(s-t0)*pps;
+  const A=cv('--accent'), A2=cv('--accent2'), Wm=cv('--warm'), Us=cv('--user');
+  const cy=17, mh=9;
+  g.globalAlpha=.75; g.fillStyle=cv('--line2');
+  for(let k=Math.ceil(t0/FR);;k++){ const x=(k*FR-t0)*pps; if(x>W||k*FR>t) break; if(x>=-2) g.fillRect(x-.6,cy,1.2,mh); }
+  g.globalAlpha=.4; g.fillStyle=cv('--faint'); g.fillRect(0,cy+mh+4,W,.6);
+  const top=cy+mh+12;
+  for(let i=0;i<K.length;i++){
+    const [s,n,a]=K[i], y=top+o.rw[i]*RH, bh=RH-5;
+    if(s>t) continue;
+    const x0=X(s), x1=X(s+a*FR), x2=X(s+n*FR);
+    if(x2<-14||x0>W+14) continue;
+    const cut=s+a*FR, gone=n>a&&t>=cut, age=t-cut;
+    const sh=Math.min(1,(t-s)/.16), xe=x0+(x2-x0)*(1-Math.pow(1-sh,3));
+    const xr=gone?x1:xe, xh=Math.max(x0,Math.min(x1,X(t)));
+    g.save(); g.beginPath(); g.roundRect(x0,y,Math.max(2,(gone?x2:xe)-x0),bh,3.5); g.clip();
+    g.globalAlpha=.30; g.fillStyle=A2; g.fillRect(x0,y,xr-x0,bh);
+    if(xh>x0){ g.globalAlpha=.95; g.fillStyle=A; g.fillRect(x0,y,xh-x0,bh); }
+    if(gone){
+      const fl=age<.45?1-age/.45:0;
+      g.globalAlpha=.58+.35*fl; g.fillStyle=Wm; g.fillRect(x1,y,x2-x1,bh);
+    }
+    g.restore();
+    g.globalAlpha=.26; g.strokeStyle=(gone?Wm:A2); g.lineWidth=1;
+    g.beginPath(); g.roundRect(x0+.5,y+.5,Math.max(1,(gone?x2:xe)-x0-1),bh-1,3.5); g.stroke();
+  }
+  const nx=W*NOWX, bot=top+NR*RH, xi=X(o.itr), bw=Math.max(7,pps*FR);
+  if(xi>-30&&xi<W+30){
+    g.globalAlpha=.10; g.fillStyle=Us; g.fillRect(xi-bw/2,cy-9,bw,bot-cy+11);
+    g.globalAlpha=.95; g.strokeStyle=Us; g.lineWidth=2; g.setLineDash([4,3]);
+    g.beginPath(); g.moveTo(xi,cy-9); g.lineTo(xi,bot+2); g.stroke(); g.setLineDash([]);
+    g.globalAlpha=1; g.fillStyle=Us;
+    g.beginPath(); g.moveTo(xi-5.5,cy-15); g.lineTo(xi+5.5,cy-15); g.lineTo(xi,cy-7); g.fill();
+  }
+  g.globalAlpha=.5; g.fillStyle=cv('--ink');
+  g.fillRect(nx-.8,cy-4,1.6,bot-cy+2);
+  g.beginPath(); g.moveTo(nx-4.5,cy-4); g.lineTo(nx+4.5,cy-4); g.lineTo(nx,cy+2); g.fill();
+  const by=bot+4, bh2=9, D=o.au.duration||1;
+  g.globalAlpha=1; g.fillStyle=cv('--line'); g.beginPath(); g.roundRect(0,by,W,bh2,3); g.fill();
+  for(const [s,n,a] of K){
+    const q0=W*s/D, q1=W*(s+a*FR)/D, q2=W*(s+n*FR)/D;
+    if(n>a&&t>=s+a*FR){ g.globalAlpha=.30; g.fillStyle=Wm; g.fillRect(q1,by,Math.max(.6,q2-q1),bh2); }
+    g.globalAlpha=t>=s?.8:.28; g.fillStyle=A; g.fillRect(q0,by,Math.max(.6,q1-q0),bh2);
+  }
+  g.globalAlpha=.6; g.fillStyle=cv('--ink'); g.fillRect(W*t/D-.8,by-3,1.6,bh2+6);
+  g.globalAlpha=1; g.fillStyle=Us; g.fillRect(W*o.itr/D-1.1,by-4,2.2,bh2+8);
+}
+function tick(o){
+  const t=o.au.currentTime, D=o.au.duration||1;
+  o.f.style.width=(100*t/D)+'%'; o.tm.textContent=fmt(D-t);
+  let now=null;
+  for(const w of o.ws){
+    const s=+w.dataset.s, e=+w.dataset.e;
+    const k=(t>=s-.02&&t<=e+.12)?'c':(t>e?'p':'');
+    if(w.className!==k) w.className=k;
+    if(k=='c'&&!now) now=w;
+  }
+  if(now&&!o.au.paused){
+    const r=now.getBoundingClientRect(), b=o.tr.getBoundingClientRect();
+    if(r.top<b.top+8||r.bottom>b.bottom-8) o.tr.scrollTop+=(r.top-b.top)-o.tr.clientHeight*.45;
+  }
+  if(o.big) draw(o,t);
+}
+function loop(o){ if(o.au.paused) return; tick(o); requestAnimationFrame(()=>loop(o)); }
+function card(key,sd,d,big){
+  const el=document.createElement('div');
+  el.className='card'+(big?' ours':'');
+  el.innerHTML=`<div class="nm">${NAME[key]}</div>`+
+    (big?'<canvas></canvas>':'')+
+    `<div class="tr${big?'':' sm'}">${trHTML(d.user,sd.words)}</div>`+
+    `<div class="pl"><button class="pb">${PLAY}</button><div class="sk"><i></i><u></u><b></b></div><div class="tm">0:00</div></div>`;
+  const au=new Audio(`assets/audio/${d.clip}/${key}.mp4`);
+  const o={el,au,big,itr:d.itr,wk:sd.wakes||null,cv:el.querySelector('canvas'),
+    tr:el.querySelector('.tr'),f:el.querySelector('.sk u'),m:el.querySelector('.sk b'),
+    tm:el.querySelector('.tm'),pb:el.querySelector('.pb'),ws:[...el.querySelectorAll('w')]};
+  o.pb.onclick=()=>{ if(au.paused){ if(playing&&playing!==au) playing.pause(); playing=au; au.play(); } else au.pause(); };
+  au.onplay=()=>{o.pb.innerHTML=PAUSE; loop(o);};
+  au.onpause=()=>o.pb.innerHTML=PLAY;
+  au.ontimeupdate=()=>tick(o);
+  au.onloadedmetadata=()=>{ o.m.style.left=(100*d.itr/au.duration)+'%'; tick(o); };
+  el.querySelector('.sk').onclick=e=>{ const b=e.currentTarget.getBoundingClientRect();
+    au.currentTime=(e.clientX-b.left)/b.width*(au.duration||0); tick(o); };
+  return o;
+}
+function show(i){
+  const d=DATA[i];
+  document.querySelectorAll('.pk').forEach((b,j)=>b.className='pk'+(j==i?' on':''));
+  $('#prompt').innerHTML=`The user asks <q>&ldquo;${d.context}&rdquo;</q> and then cuts in with <q class="cut">&ldquo;${d.interrupt}&rdquo;</q>`;
+  if(playing){ playing.pause(); playing=null; }
+  cards.forEach(c=>{ c.au.pause(); c.el.remove(); }); cards=[];
+  const put=(sel,keys,big)=>{ const h=$(sel); h.innerHTML='';
+    for(const k of keys){ const o=card(k,d.sys[k],d,big); h.appendChild(o.el); cards.push(o); } };
+  put('#ours',OURS,true); put('#b1',B1,false);
+}
+fetch('assets/samples.json').then(r=>r.json()).then(j=>{
+  DATA=j;
+  const p=$('#pick');
+  DATA.forEach((d,i)=>{ const b=document.createElement('button'); b.className='pk';
+    b.textContent='Sample '+(i+1); b.onclick=()=>show(i); p.appendChild(b); });
+  show(0);
+});
+addEventListener('resize',()=>cards.forEach(o=>o.big&&draw(o,o.au.currentTime)));
+</script>
+</body></html>
